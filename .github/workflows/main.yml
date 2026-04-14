@@ -7,38 +7,68 @@ on:
 jobs:
   review:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Necessary to compare branches
 
       - name: Get PR diff
         id: diff
         run: |
+          # Fetch the base branch to ensure git can see the differences
           git fetch origin ${{ github.base_ref }}
           git diff origin/${{ github.base_ref }} > diff.txt
+
+      - name: Generate Gemini Payload
+        # We use Python to safely handle special characters/newlines in the code diff
+        run: |
+          python3 << 'EOF'
+          import json
+          import os
+
+          try:
+              with open("diff.txt", "r") as f:
+                  diff_content = f.read()
+
+              # Construct the Gemini API structure
+              payload = {
+                  "contents": [{
+                      "parts": [{
+                          "text": f"Act as a senior developer. Review this code diff and suggest improvements or identify bugs:\n\n{diff_content}"
+                      }]
+                  }]
+              }
+
+              with open("payload.json", "w") as f:
+                  json.dump(payload, f)
+              print("Successfully created payload.json")
+          except Exception as e:
+              print(f"Error: {e}")
+              exit(1)
+          EOF
 
       - name: Call Gemini API
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
-          # 1. Use Python to build the entire JSON object safely
-            python3 -c '
-            import json, sys
-            diff_content = open("diff.txt").read()
-            payload = {
-                "contents": [{
-                    "parts": [{
-                        "text": f"Review this code diff and suggest improvements:\n\n{diff_content}"
-                    }]
-                }]
-            }
-            with open("payload.json", "w") as f:
-                json.dump(payload, f)
-            '
-
-          # 2. Call the API using the safely generated file
           curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GOOGLE_API_KEY" \
             -H "Content-Type: application/json" \
             -d @payload.json > response.json
 
-          # 3. Print the response
-          cat response.json
+      - name: Display Review Results
+        run: |
+          # Check if the response contains an error or the actual review
+          if grep -q "error" response.json; then
+            echo "API Error Detected:"
+            cat response.json
+            exit 1
+          else
+            echo "### AI Code Review"
+            # Extract the text response using python (built-in) or jq (if available)
+            python3 -c "import json; data = json.load(open('response.json')); print(data['candidates'][0]['content']['parts'][0]['text'])"
+          fi
