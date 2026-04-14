@@ -1,21 +1,34 @@
-name: RegisterApp CI Pipeline
+name: AI Code Review
+
 on:
   pull_request:
-    types: [ opened, synchronize ]
+    types: [opened, synchronize]
+
 jobs:
-  ai-code-review:
+  review:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
     steps:
-      - name: AI Code Review
-        uses: AleksandrFurmenkovOfficial/ai-code-review@v0.9
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.repository.name }}
-          pr_number: ${{ github.event.number }}
-          ai_provider: 'google'
-          google_api_key: ${{ secrets.GOOGLE_API_KEY }}
-          google_model: 'models/gemini-1.5-flash'
+      - uses: actions/checkout@v4
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git diff origin/${{ github.base_ref }} > diff.txt
+
+      - name: Call Gemini API
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          curl -s https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent \
+            -H "Content-Type: application/json" \
+            -H "x-goog-api-key: $GOOGLE_API_KEY" \
+            -d '{
+              "contents": [{
+                "parts": [{
+                  "text": "Review this code diff:\n\n'"$(cat diff.txt | sed 's/"/\\"/g')"'" 
+                }]
+              }]
+            }' > response.json
+
+          cat response.json
