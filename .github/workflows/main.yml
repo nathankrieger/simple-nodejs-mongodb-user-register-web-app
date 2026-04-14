@@ -20,18 +20,25 @@ jobs:
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
-          # 1. Properly escape the diff content for JSON
-          # This is vital; raw 'cat' into a string will break the API request
-          PYTHON_ESCAPED_DIFF=$(cat diff.txt | python3 -c 'import json, sys; print(json.dumps(sys.stdin.read()))')
+          # 1. Use Python to build the entire JSON object safely
+          python3 -c '
+            import json, sys
+            diff_content = open("diff.txt").read()
+            payload = {
+                "contents": [{
+                    "parts": [{
+                        "text": f"Review this code diff and suggest improvements:\n\n{diff_content}"
+                    }]
+                }]
+            }
+            with open("payload.json", "w") as f:
+                json.dump(payload, f)
+            '
 
-          # 2. Construct the JSON payload
-          echo "{\"contents\": [{\"parts\": [{\"text\": \"Review this code diff:\n\n$PYTHON_ESCAPED_DIFF\"}]}]}" > payload.json
-
-          # 3. Use the v1beta endpoint with the base model name (no -latest suffix)
-          # Pass the API key as a query parameter for better reliability in curl
+          # 2. Call the API using the safely generated file
           curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GOOGLE_API_KEY" \
             -H "Content-Type: application/json" \
             -d @payload.json > response.json
 
-          # 4. Show the response
+          # 3. Print the response
           cat response.json
