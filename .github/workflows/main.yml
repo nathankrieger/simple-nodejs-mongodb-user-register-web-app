@@ -19,7 +19,6 @@ jobs:
   #     ... [rest of the review steps] ...
 
   run-tests:
-    fail sfdsdasdf 
     runs-on: ubuntu-latest
     # Removed "needs: review" so this job runs independently
     steps:
