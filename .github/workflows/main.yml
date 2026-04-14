@@ -21,7 +21,7 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           # 1. Use Python to build the entire JSON object safely
-          python3 -c '
+            python3 -c '
             import json, sys
             diff_content = open("diff.txt").read()
             payload = {
