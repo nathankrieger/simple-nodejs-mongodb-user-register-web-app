@@ -251,7 +251,7 @@ describe('User Routes - POST /add', () => {
           phone: '1234567890'
         });
 
-      expect(response.status).toBe(301); // ERROR ON PURPOSE
+      expect(response.status).toBe(302);
       expect(response.headers.location).toBe('/');
     });
   });
