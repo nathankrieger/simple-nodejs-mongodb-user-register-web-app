@@ -7,12 +7,6 @@ const session = require('express-session');
 const app = express();
 const PORT = process.env.PORT || 5500;
 
-
-
-
-console.log("Hello")
-console.log(process.env.MONGODB_URI)
-
 // db connection
 mongoose.connect(process.env.MONGODB_URI,{
     useNewUrlParser: true,

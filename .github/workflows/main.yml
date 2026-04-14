@@ -1,21 +1,37 @@
-name: RegisterApp CI Pipeline
+name: AI Code Review and Test
+
 on:
   pull_request:
-    types: [ opened, synchronize ]
+    types: [opened, synchronize]
+
 jobs:
-  ai-code-review:
+  # The AI Review job is commented out to disable it for now
+  # review:
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     pull-requests: write
+  #   steps:
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #     ... [rest of the review steps] ...
+
+  run-tests:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
+    # Removed "needs: review" so this job runs independently
     steps:
-      - name: AI Code Review
-        uses: AleksandrFurmenkovOfficial/ai-code-review@v0.9
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.repository.name }}
-          pr_number: ${{ github.event.number }}
-          ai_provider: 'google'
-          google_api_key: ${{ secrets.GOOGLE_API_KEY }}
-          google_model: 'gemini-1.5-flash'
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Jest tests
+        run: npm test
