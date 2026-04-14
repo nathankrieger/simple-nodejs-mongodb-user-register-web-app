@@ -62,13 +62,25 @@ jobs:
 
       - name: Display Review Results
         run: |
-          # Check if the response contains an error or the actual review
-          if grep -q "error" response.json; then
-            echo "API Error Detected:"
-            cat response.json
-            exit 1
-          else
-            echo "### AI Code Review"
-            # Extract the text response using python (built-in) or jq (if available)
-            python3 -c "import json; data = json.load(open('response.json')); print(data['candidates'][0]['content']['parts'][0]['text'])"
-          fi
+          # Use Python to check if 'candidates' exists (Success) or 'error' exists (Failure)
+          python3 << 'EOF'
+          import json
+          try:
+              with open('response.json') as f:
+                  data = json.load(f)
+              
+              if 'candidates' in data:
+                  print("### AI Code Review Result")
+                  print(data['candidates'][0]['content']['parts'][0]['text'])
+              elif 'error' in data:
+                  print("### API Error")
+                  print(json.dumps(data['error'], indent=2))
+                  exit(1)
+              else:
+                  print("Unexpected Response Format")
+                  print(data)
+                  exit(1)
+          except Exception as e:
+              print(f"Failed to parse response: {e}")
+              exit(1)
+          EOF
