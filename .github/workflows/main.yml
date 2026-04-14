@@ -56,7 +56,7 @@ jobs:
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
-          curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key=$GOOGLE_API_KEY" \
+          curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=$GOOGLE_API_KEY" \
             -H "Content-Type: application/json" \
             -d @payload.json > response.json
 
