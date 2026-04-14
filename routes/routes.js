@@ -66,7 +66,7 @@ router.post('/add', upload, async (req, res) => {
     try {
         const user = new User({
             name: req.body.name,
-            email: "test email [remove this line]",
+            email: req.body.email, // fixed this bug
             phone: req.body.phone,
             image: req.file ? req.file.filename : 'user_unknown.png'
         });
