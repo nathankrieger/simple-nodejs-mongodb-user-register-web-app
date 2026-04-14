@@ -20,7 +20,7 @@ jobs:
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
-          curl -s https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent \
+          curl -s https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent \
             -H "Content-Type: application/json" \
             -H "x-goog-api-key: $GOOGLE_API_KEY" \
             -d '{
